@@ -60,8 +60,8 @@ export default function HeroLogo() {
     const gather = Math.max(0, 1 - distance);
     if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     frameRef.current = requestAnimationFrame(() => {
-      visual.style.setProperty("--mx", `${x * 14}px`);
-      visual.style.setProperty("--my", `${y * 14}px`);
+      visual.style.setProperty("--mx", `${x * 28}px`);
+      visual.style.setProperty("--my", `${y * 28}px`);
       visual.style.setProperty("--gather", gather.toFixed(3));
       frameRef.current = null;
     });
