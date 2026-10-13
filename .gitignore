@@ -1,0 +1,24 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# Next.js build output
+/.next
+/out
+/dist
+/build
+
+# Test and coverage output
+/coverage
+
+# Local environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Local tooling and logs
+*.log
+.DS_Store
+*.tsbuildinfo
+/.vercel
