@@ -4,7 +4,6 @@ import { CSSProperties, FormEvent, RefObject, useEffect, useRef, useState } from
 
 import HeroLogo from "./hero-logo";
 
-type Palette = "gray" | "blue" | "yellow";
 type ProjectKey = "brand" | "system";
 
 const services = [
@@ -98,7 +97,6 @@ function Contact({ onSubmit }: { onSubmit: (event: FormEvent<HTMLFormElement>) =
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [palette, setPalette] = useState<Palette>("gray");
   const [scene, setScene] = useState(0);
   const [progress, setProgress] = useState(0);
   const [modalProject, setModalProject] = useState<ProjectKey | null>(null);
@@ -108,9 +106,6 @@ export default function Home() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get("palette");
-    const initialPalette: Palette = requested === "blue" || requested === "yellow" ? requested : "gray";
-    const paletteFrame = window.requestAnimationFrame(() => setPalette(initialPalette));
     const revealObserver = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) { entry.target.classList.add("in"); revealObserver.unobserve(entry.target); } }), { threshold: 0.13 });
     document.querySelectorAll(".reveal").forEach((element) => revealObserver.observe(element));
     const updateScroll = () => {
@@ -125,12 +120,8 @@ export default function Home() {
     };
     window.addEventListener("scroll", updateScroll, { passive: true });
     window.addEventListener("resize", updateScroll); updateScroll();
-    return () => { window.cancelAnimationFrame(paletteFrame); revealObserver.disconnect(); window.removeEventListener("scroll", updateScroll); window.removeEventListener("resize", updateScroll); };
+    return () => { revealObserver.disconnect(); window.removeEventListener("scroll", updateScroll); window.removeEventListener("resize", updateScroll); };
   }, []);
-
-  useEffect(() => {
-    document.documentElement.dataset.palette = palette;
-  }, [palette]);
 
   useEffect(() => {
     if (!modalProject) return;
@@ -164,6 +155,5 @@ export default function Home() {
     <Services /><Works onProject={(project, trigger) => { lastFocus.current = trigger; setModalProject(project); }} /><Process /><Contact onSubmit={handleForm} />
     {modalProject && <div className="modal-backdrop open" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) setModalProject(null); }}><div className="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabIndex={-1}><button className="modal-close" onClick={() => setModalProject(null)} aria-label="關閉視窗" autoFocus>×</button><span className="tag eyebrow">VISUAL CONCEPT · NOT A CLIENT PROJECT</span><h3 id="modalTitle">{projectContent[modalProject].title}</h3><p>{projectContent[modalProject].text}</p><div>{projectContent[modalProject].tags.map((tag) => <span className="modal-pill" key={tag}>{tag}</span>)}</div></div></div>}
     <div className={`toast${toast ? " show" : ""}`} role="status" aria-live="polite">{toast}</div>
-    <div className="palette-lab" role="group" aria-label="首頁原型配色試看"><span className="palette-lab-label">V2｜配色試看</span>{(["gray", "blue", "yellow"] as Palette[]).map((option) => <button type="button" key={option} onClick={() => setPalette(option)} aria-pressed={palette === option}>{option === "gray" ? "黑白灰" : option === "blue" ? "霧藍" : "霧黃"}</button>)}</div>
   </main>;
 }

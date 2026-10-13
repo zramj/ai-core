@@ -21,9 +21,23 @@ export default function HeroLogo() {
   useEffect(() => {
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
     const pointer = matchMedia("(hover: hover) and (pointer: fine)");
+    const visual = visualRef.current;
+    let inView = true;
+    const updateVisibility = () => {
+      if (visual) visual.dataset.motionPaused = String(!inView || document.hidden);
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting;
+      updateVisibility();
+    });
+    if (visual) observer.observe(visual);
+    updateVisibility();
+    document.addEventListener("visibilitychange", updateVisibility);
     motion.addEventListener("change", reset);
     pointer.addEventListener("change", reset);
     return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", updateVisibility);
       motion.removeEventListener("change", reset);
       pointer.removeEventListener("change", reset);
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
@@ -42,12 +56,12 @@ export default function HeroLogo() {
     // Proximity to the chevron controls assembly; the outer visual only adds depth.
     const artX = (event.clientX - artBounds.left) / artBounds.width * 680;
     const artY = (event.clientY - artBounds.top) / artBounds.height * 720;
-    const distance = Math.hypot((artX - 358) / 155, (artY - 330) / 150);
+    const distance = Math.hypot((artX - 358) / 175, (artY - 330) / 165);
     const gather = Math.max(0, 1 - distance);
     if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     frameRef.current = requestAnimationFrame(() => {
-      visual.style.setProperty("--mx", `${x * 8}px`);
-      visual.style.setProperty("--my", `${y * 8}px`);
+      visual.style.setProperty("--mx", `${x * 14}px`);
+      visual.style.setProperty("--my", `${y * 14}px`);
       visual.style.setProperty("--gather", gather.toFixed(3));
       frameRef.current = null;
     });
@@ -83,7 +97,7 @@ export default function HeroLogo() {
           <path d="M22 344H649 M98 560H555 M358 112H617 M358 628H555" />
           <path d="M212 221V626 M98 448H650" opacity=".22" />
           <path d="M98 344 A175 175 0 0 1 273 169" strokeDasharray="1 3" />
-          <path d="M358 282H510 M98 560H196" stroke="#626266" />
+          <path className={styles.lineBreath} d="M358 282H510 M98 560H196" stroke="#626266" />
           <path d="M94 112H102 M538 560H546 M354 344H362 M358 340V348" />
           <g fill="#39393b" stroke="none"><circle cx="98" cy="50" r="1.2" /><circle cx="98" cy="652" r="1.2" /><circle cx="22" cy="344" r="1.2" /><circle cx="98" cy="344" r="1.5" /><circle cx="372" cy="282" r="1.7" /></g>
           <text x="588" y="328" stroke="none" fill="#77777c" className={styles.label}>AI CORE</text>
@@ -101,40 +115,46 @@ export default function HeroLogo() {
       </g>
 
       <g className={styles.arcLayer}>
-        <g className={styles.arcLines} fill="none" stroke="#9b9b9f" strokeWidth=".7">
-          <path d="M358 102 A270 270 0 0 1 561 550" />
-          <path d="M358 112 A260 260 0 0 1 358 632" />
-          <path d="M425 122 A255 255 0 0 1 358 632" opacity=".55" />
-          <path d="M98 372 A260 260 0 0 0 358 632" stroke="#414145" />
-          <path d="M358 576 A158 158 0 0 0 504 444" stroke="#4b4b50" strokeDasharray="2 4" />
+        <g className={styles.arcDrift}>
+          <g className={styles.arcLines} fill="none" stroke="#9b9b9f" strokeWidth=".7">
+            <path d="M358 102 A270 270 0 0 1 561 550" />
+            <path d="M358 112 A260 260 0 0 1 358 632" />
+            <path d="M425 122 A255 255 0 0 1 358 632" opacity=".55" />
+            <path d="M98 372 A260 260 0 0 0 358 632" stroke="#414145" />
+            <path d="M358 576 A158 158 0 0 0 504 444" stroke="#4b4b50" strokeDasharray="2 4" />
+          </g>
+          <path d="M358 112 A260 260 0 0 0 132 502" fill="none" stroke={`url(#${id}-arc)`} strokeWidth="18" mask={`url(#${id}-arc-mask)`} />
         </g>
-        <path d="M358 112 A260 260 0 0 0 132 502" fill="none" stroke={`url(#${id}-arc)`} strokeWidth="18" mask={`url(#${id}-arc-mask)`} />
       </g>
 
       <g className={styles.riseLayer}>
-        <g className={styles.rise}>
-          <path d="M45 534 358 299V343L78 553Z" fill={`url(#${id}-rise)`} />
-          <path d="M40 513 358 274" fill="none" stroke="#86868b" strokeWidth=".7" opacity=".65" />
-          <path d="M98 490 358 294" fill="none" stroke="#8a8a8e" strokeWidth=".65" opacity=".38" />
-          <path d="M12 627 242 454" fill="none" stroke="#aaaab0" strokeWidth=".5" opacity=".3" />
+        <g className={styles.riseDrift}>
+          <g className={styles.rise}>
+            <path d="M45 534 358 299V343L78 553Z" fill={`url(#${id}-rise)`} />
+            <path d="M40 513 358 274" fill="none" stroke="#86868b" strokeWidth=".7" opacity=".65" />
+            <path d="M98 490 358 294" fill="none" stroke="#8a8a8e" strokeWidth=".65" opacity=".38" />
+            <path d="M12 627 242 454" fill="none" stroke="#aaaab0" strokeWidth=".5" opacity=".3" />
+          </g>
         </g>
       </g>
       <g className={styles.fallLayer}>
-        <g className={styles.fall}>
-          <path d="M358 299 649 517V560L358 343Z" fill={`url(#${id}-fall)`} />
-          <g fill="none" stroke={`url(#${id}-threads)`} strokeWidth=".65">
-            {Array.from({length: 8}, (_, index) => <path key={index} d={`M358 ${274 + index * 8} 655 ${497 + index * 8}`} />)}
-            {Array.from({length: 13}, (_, index) => {
-              const x = 403 + index * 9;
-              const y = 333 + index * 6.75;
-              return <path key={index} d={`M${x} ${y}V${y + 49}`} opacity=".5" />;
-            })}
+        <g className={styles.fallDrift}>
+          <g className={styles.fall}>
+            <path d="M358 299 649 517V560L358 343Z" fill={`url(#${id}-fall)`} />
+            <g fill="none" stroke={`url(#${id}-threads)`} strokeWidth=".65">
+              {Array.from({length: 8}, (_, index) => <path key={index} d={`M358 ${274 + index * 8} 655 ${497 + index * 8}`} />)}
+              {Array.from({length: 13}, (_, index) => {
+                const x = 403 + index * 9;
+                const y = 333 + index * 6.75;
+                return <path key={index} d={`M${x} ${y}V${y + 49}`} opacity=".5" />;
+              })}
+            </g>
           </g>
         </g>
       </g>
 
       <g className={styles.dotLayer}>
-        <circle className={styles.dot} cx="432" cy="469" r="16" />
+        <g className={styles.dotFloat}><circle className={styles.dot} cx="432" cy="469" r="16" /></g>
       </g>
     </svg>
   </div>;

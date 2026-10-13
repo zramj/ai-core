@@ -25,16 +25,27 @@
 }
 
 .guidesLayer, .planesLayer, .arcLayer, .riseLayer, .fallLayer, .dotLayer {
-  transition: transform .65s cubic-bezier(.16, 1, .3, 1);
+  transition: transform .7s cubic-bezier(.16, 1, .3, 1);
   /* Only these six groups move; the SVG never changes the page layout. */
 }
 
-.guidesLayer { transform: translate(calc(var(--mx) * -.22), calc(var(--my) * -.22)); }
-.planesLayer { transform: translate(calc(var(--mx) * .3), calc(var(--my) * .3)); }
-.arcLayer { transform: translate(calc(var(--mx) * .7 + var(--gather) * 4px), calc(var(--my) * .7 + var(--gather) * 2px)); }
-.riseLayer { transform: translate(calc(var(--mx) * -.55 + var(--gather) * 5px), calc(var(--my) * -.45 - var(--gather) * 3px)); }
-.fallLayer { transform: translate(calc(var(--mx) * -.35 - var(--gather) * 4px), calc(var(--my) * -.55 - var(--gather) * 3px)); }
-.dotLayer { transform: translate(calc(var(--mx) * .95 - var(--gather) * 6px), calc(var(--my) * .95 - var(--gather) * 5px)); }
+.guidesLayer { transform: translate(calc(var(--mx) * -.5), calc(var(--my) * -.5)); }
+.planesLayer { transform: translate(calc(var(--mx) * .35), calc(var(--my) * .35)); }
+.arcLayer { transform: translate(calc(var(--mx) + var(--gather) * 7px), calc(var(--my) + var(--gather) * 4px)); }
+.riseLayer { transform: translate(calc(var(--mx) * -.65 + var(--gather) * 9px), calc(var(--my) * -.55 - var(--gather) * 5px)); }
+.fallLayer { transform: translate(calc(var(--mx) * -.45 - var(--gather) * 8px), calc(var(--my) * -.65 - var(--gather) * 5px)); }
+.dotLayer { transform: translate(calc(var(--mx) * 1.1 - var(--gather) * 10px), calc(var(--my) * 1.1 - var(--gather) * 8px)); }
+
+/* Nested groups let ambient motion and pointer response compose independently. */
+.arcDrift { --drift-x: 3.5px; --drift-y: -3px; animation: drift 12s 1.1s ease-in-out infinite; }
+.riseDrift { --drift-x: 1.5px; --drift-y: -1px; animation: drift 14s 1.1s ease-in-out infinite; }
+.fallDrift { --drift-x: -1px; --drift-y: 1.5px; animation: drift 16s 1.1s ease-in-out infinite; }
+.dotFloat { --drift-x: -2px; --drift-y: -5px; animation: drift 8s 1.1s ease-in-out infinite; }
+.lineBreath { animation: line-breathe 10s 1.1s ease-in-out infinite; }
+
+.visual[data-motion-paused="true"] :is(.arcDrift, .riseDrift, .fallDrift, .dotFloat, .lineBreath) {
+  animation-play-state: paused;
+}
 
 .guides { animation: appear .35s ease-out both; }
 .planes { animation: appear .55s .3s ease-out both; }
@@ -48,6 +59,11 @@
 @keyframes draw { from { stroke-dasharray: 1; stroke-dashoffset: 1; } to { stroke-dasharray: 1; stroke-dashoffset: 0; } }
 @keyframes unfold-rise { from { opacity: 0; transform: translate(-7px, 5px); } to { opacity: 1; transform: translate(0, 0); } }
 @keyframes unfold-fall { from { opacity: 0; transform: translate(6px, 5px); } to { opacity: 1; transform: translate(0, 0); } }
+@keyframes drift {
+  0%, 15%, 85%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(var(--drift-x), var(--drift-y)); }
+}
+@keyframes line-breathe { 0%, 100% { opacity: .65; } 50% { opacity: .95; } }
 
 @media (max-width: 850px) {
   .art { width: 400px; max-width: 100%; }
@@ -61,6 +77,10 @@
   .rise { animation-delay: .16s; }
   .fall { animation-delay: .2s; }
   .dot { animation-duration: .2s; animation-delay: .5s; }
+  .arcDrift { --drift-x: 2px; --drift-y: -1.5px; animation-duration: 9s; animation-delay: .72s; }
+  .dotFloat { --drift-x: -1px; --drift-y: -3px; animation-duration: 7s; animation-delay: .72s; }
+  .riseDrift, .fallDrift { animation: none; }
+  .lineBreath { animation-duration: 9s; animation-delay: .72s; }
 }
 
 @media (hover: none), (pointer: coarse) {
@@ -69,5 +89,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .guides, .planes, .arcLines, .arcReveal, .rise, .fall, .dot { animation: none; }
+  .arcDrift, .riseDrift, .fallDrift, .dotFloat, .lineBreath { animation: none; }
   .guidesLayer, .planesLayer, .arcLayer, .riseLayer, .fallLayer, .dotLayer { transform: none; transition: none; }
 }
