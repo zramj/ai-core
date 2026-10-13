@@ -1,6 +1,8 @@
 "use client";
 
-import { CSSProperties, FormEvent, MouseEvent, RefObject, useEffect, useRef, useState } from "react";
+import { CSSProperties, FormEvent, RefObject, useEffect, useRef, useState } from "react";
+
+import HeroLogo from "./hero-logo";
 
 type Palette = "gray" | "blue" | "yellow";
 type ProjectKey = "brand" | "system";
@@ -102,7 +104,6 @@ export default function Home() {
   const [modalProject, setModalProject] = useState<ProjectKey | null>(null);
   const [toast, setToast] = useState("");
   const storyRef = useRef<HTMLElement>(null);
-  const orbitalRef = useRef<HTMLDivElement>(null);
   const lastFocus = useRef<HTMLButtonElement | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -154,12 +155,10 @@ export default function Home() {
       showToast(copied ? "需求摘要已複製！" : "瀏覽器限制複製，請手動選取文字");
     }
   };
-  const handlePointerMove = (event: MouseEvent<HTMLElement>) => { if (!window.matchMedia("(pointer:fine)").matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; const rect = event.currentTarget.getBoundingClientRect(); orbitalRef.current?.style.setProperty("--mx", `${((event.clientX - rect.left) / rect.width - 0.5) * 24}px`); orbitalRef.current?.style.setProperty("--my", `${((event.clientY - rect.top) / rect.height - 0.5) * 21}px`); };
-  const resetOrbital = () => { orbitalRef.current?.style.setProperty("--mx", "0px"); orbitalRef.current?.style.setProperty("--my", "0px"); };
 
   return <main id="top">
     <Header menuOpen={menuOpen} onMenuToggle={() => setMenuOpen((open) => !open)} onCloseMenu={() => setMenuOpen(false)} />
-    <section className="hero" aria-labelledby="heroTitle"><div className="container hero-main"><div className="hero-copy"><div className="hero-kicker eyebrow"><span className="line" /><span>DESIGN &amp; DEVELOPMENT STUDIO</span></div><h1 id="heroTitle"><span className="hero-title-line">好的網站，</span><span className="hero-title-line indent">不只好看<span className="hero-dot">。</span></span></h1><p className="lead">從品牌形象網站、UI／UX 到客製化數位工具。<br />艾構結合設計思考與開發實作，讓想法不只被看見，更能真正運作。</p><div className="hero-buttons"><a className="btn-dark" href="#story">探索艾構的方式 <span aria-hidden="true">↗</span></a><a className="btn-text" href="#services">我們提供哪些服務 <span aria-hidden="true">↘</span></a></div></div><div className="hero-visual" aria-label="象徵設計與開發整合的幾何核心圖像" onPointerMove={handlePointerMove} onPointerLeave={resetOrbital}><div className="orbital" ref={orbitalRef}><div className="orbit" /><div className="orbit o2" /><div className="orbit o3" /><div className="core-obj"><div className="core-pulse" /></div></div><span className="shape-note n1 mono"><span className="shape-pin" />IDEA → INTERFACE<br />&nbsp;&nbsp; → EXPERIENCE</span><span className="shape-note n2 mono">VISUAL SYSTEM / 001<br />CRAFTED WITH INTENT</span></div></div><div className="container hero-baseline mono"><span>01 / AI CORE — INDEPENDENT DIGITAL STUDIO</span><span className="scroll-prompt">SCROLL TO EXPLORE <span className="down-arrow" aria-hidden="true">↓</span></span></div></section>
+    <section className="hero" aria-labelledby="heroTitle"><div className="container hero-main"><div className="hero-copy"><div className="hero-kicker eyebrow"><span className="line" /><span>DESIGN &amp; DEVELOPMENT STUDIO</span></div><h1 id="heroTitle"><span className="hero-title-line">好的網站，</span><span className="hero-title-line indent">不只好看<span className="hero-dot">。</span></span></h1><p className="lead">從品牌形象網站、UI／UX 到客製化數位工具。<br />艾構結合設計思考與開發實作，讓想法不只被看見，更能真正運作。</p><div className="hero-buttons"><a className="btn-dark" href="#story">探索艾構的方式 <span aria-hidden="true">↗</span></a><a className="btn-text" href="#services">我們提供哪些服務 <span aria-hidden="true">↘</span></a></div></div><HeroLogo /></div><div className="container hero-baseline mono"><span>01 / AI CORE — INDEPENDENT DIGITAL STUDIO</span><span className="scroll-prompt">SCROLL TO EXPLORE <span className="down-arrow" aria-hidden="true">↓</span></span></div></section>
     <aside className="manifesto"><div className="container manifesto-inner"><div className="manifesto-title">有設計的感受，也有實作的底氣。<br />讓每個細節，都回到使用者與品牌本身。</div><div className="manifesto-side mono">DESIGN THINKING <span aria-hidden="true">×</span> DEVELOPMENT<br />FOR BRANDS WHO WANT TO MOVE FORWARD.</div></div></aside>
     <Story scene={scene} progress={progress} storyRef={storyRef} />
     <Services /><Works onProject={(project, trigger) => { lastFocus.current = trigger; setModalProject(project); }} /><Process /><Contact onSubmit={handleForm} />
