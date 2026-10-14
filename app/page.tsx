@@ -169,7 +169,7 @@ function ProjectModal({ project, trigger, onClosed }: {
     onClick={(event) => { if (event.target === event.currentTarget) setClosing(true); }}
     onAnimationEnd={(event) => { if (closing && event.target === event.currentTarget && event.animationName === "portfolio-backdrop-out") onClosed(); }}>
     <div className="modal-shell" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDescription" tabIndex={-1}>
-      <button className="modal-close" ref={closeRef} onClick={() => setClosing(true)} aria-label="關閉視窗"><span aria-hidden="true">×</span></button>
+      <button className="modal-close" ref={closeRef} onClick={() => setClosing(true)} aria-label="關閉視窗"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true" focusable="false"><path d="M5 5 19 19M19 5 5 19" /></svg></button>
       <div className="modal">
         <span className="tag eyebrow">{project.label}</span>
         <h3 id="modalTitle">{project.title}</h3>
