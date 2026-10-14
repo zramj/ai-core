@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, RefObject, useEffect, useRef, useState } from "react";
+import { useCallback, FormEvent, RefObject, useEffect, useRef, useState } from "react";
 
 import Image from "next/image";
 
@@ -108,6 +108,81 @@ function Works({ onProject }: { onProject: (project: ProjectKey, trigger: HTMLBu
   })}</div></div></section>;
 }
 
+function ProjectModal({ project, trigger, onClosed }: {
+  project: (typeof projectContent)[ProjectKey];
+  trigger: HTMLButtonElement | null;
+  onClosed: () => void;
+}) {
+  const [closing, setClosing] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const previousOverflow = document.body.style.overflow;
+    const previousPadding = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    const background = Array.from(document.querySelector("main")?.children ?? [])
+      .filter((element): element is HTMLElement => element instanceof HTMLElement && !element.contains(dialog))
+      .map((element) => ({ element, inert: element.inert }));
+    background.forEach(({ element }) => { element.inert = true; });
+    document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) document.body.style.paddingRight = `${parseFloat(getComputedStyle(document.body).paddingRight) + scrollbarWidth}px`;
+    closeRef.current?.focus({ preventScroll: true });
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); setClosing(true); }
+      if (event.key !== "Tab") return;
+      const controls = Array.from(dialog.querySelectorAll<HTMLElement>("button, a[href]"));
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        event.preventDefault(); last?.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+        event.preventDefault(); first?.focus();
+      }
+    };
+    const onFocusIn = (event: FocusEvent) => {
+      if (!dialog.contains(event.target as Node)) closeRef.current?.focus({ preventScroll: true });
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("focusin", onFocusIn);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("focusin", onFocusIn);
+      background.forEach(({ element, inert }) => { element.inert = inert; });
+      document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPadding;
+      trigger?.focus({ preventScroll: true });
+    };
+  }, [trigger]);
+
+  useEffect(() => {
+    if (!closing) return;
+    // Fallback for interrupted animations; normal removal follows animationend.
+    const timeout = setTimeout(onClosed, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300);
+    return () => clearTimeout(timeout);
+  }, [closing, onClosed]);
+
+  return <div className={`modal-backdrop open${closing ? " closing" : ""}`} role="presentation"
+    onClick={(event) => { if (event.target === event.currentTarget) setClosing(true); }}
+    onAnimationEnd={(event) => { if (closing && event.target === event.currentTarget && event.animationName === "portfolio-backdrop-out") onClosed(); }}>
+    <div className="modal-shell" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDescription" tabIndex={-1}>
+      <button className="modal-close" ref={closeRef} onClick={() => setClosing(true)} aria-label="關閉視窗"><span aria-hidden="true">×</span></button>
+      <div className="modal">
+        <span className="tag eyebrow">{project.label}</span>
+        <h3 id="modalTitle">{project.title}</h3>
+        <p id="modalDescription">{project.text}</p>
+        <div className="modal-footer">
+          <div className="modal-tags">{project.tags.map((tag) => <span className="modal-pill" key={tag}>{tag}</span>)}</div>
+          <a className="modal-link" href={project.url} target="_blank" rel="noopener noreferrer" aria-label={`開啟${project.name}網站（新分頁）`}>LINK <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </div>
+  </div>;
+}
+
 function Process() {
   return <><section className="process" id="approach"><div className="container process-wrap"><div className="reveal"><span className="eyebrow">03 — HOW WE WORK</span><h2 className="process-title">好好溝通，<br />把事情<br />做好。</h2><p className="process-intro">不需要一開始就有完整規格。先說說你的想法，我們再一起找出合適的做法。</p></div><div className="process-items reveal">{processItems.map(([title, text], index) => <div className="process-item" key={title}><span className="idx mono">0{index + 1}</span><div><h3>{title}</h3><p>{text}</p></div><span className="plus">↗</span></div>)}</div></div></section><section className="why"><div className="container why-inner"><div className="reveal"><span className="eyebrow">A SMALL STUDIO, ONE CLEAR IDEA</span><h2 className="why-quote">好的合作，<br />是讓複雜的事<br />變得更清楚。</h2></div><div className="why-right reveal"><p>艾構是結合設計與技術的獨立工作室。我們希望每一個決策都能回應真實需求，而不是為了追求流行或堆疊不必要的功能。</p><p className="mono why-signoff">DESIGN WITH CLARITY. BUILD WITH PURPOSE.</p></div></div></section></>;
 }
@@ -120,10 +195,9 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scene, setScene] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [modalProject, setModalProject] = useState<ProjectKey | null>(null);
+  const [modalProject, setModalProject] = useState<{ key: ProjectKey; trigger: HTMLButtonElement } | null>(null);
   const [toast, setToast] = useState("");
   const storyRef = useRef<HTMLElement>(null);
-  const lastFocus = useRef<HTMLButtonElement | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -144,12 +218,7 @@ export default function Home() {
     return () => { revealObserver.disconnect(); window.removeEventListener("scroll", updateScroll); window.removeEventListener("resize", updateScroll); };
   }, []);
 
-  useEffect(() => {
-    if (!modalProject) return;
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") setModalProject(null); };
-    document.body.style.overflow = "hidden"; window.addEventListener("keydown", onKeyDown);
-    return () => { document.body.style.overflow = ""; window.removeEventListener("keydown", onKeyDown); lastFocus.current?.focus(); };
-  }, [modalProject]);
+  const closeProject = useCallback(() => setModalProject(null), []);
 
   const showToast = (message: string) => { setToast(message); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(""), 3100); };
   const handleForm = async (event: FormEvent<HTMLFormElement>) => {
@@ -173,8 +242,8 @@ export default function Home() {
     <section className="hero" aria-labelledby="heroTitle"><div className="container hero-main"><div className="hero-copy"><div className="hero-kicker eyebrow"><span className="line" /><span>DESIGN &amp; DEVELOPMENT STUDIO</span></div><h1 id="heroTitle"><span className="hero-title-line">好的網站，</span><span className="hero-title-line indent">不只好看<span className="hero-dot">。</span></span></h1><p className="lead">從品牌形象網站、UI／UX 到客製化數位工具。<br />艾構結合設計思考與開發實作，讓想法不只被看見，更能真正運作。</p><div className="hero-buttons"><a className="btn-dark" href="#story">探索艾構的方式 <span aria-hidden="true">↗</span></a><a className="btn-text" href="#services">我們提供哪些服務 <span aria-hidden="true">↘</span></a></div></div><HeroLogo /></div><div className="container hero-baseline mono"><span>01 / AI CORE — INDEPENDENT DIGITAL STUDIO</span><span className="scroll-prompt">SCROLL TO EXPLORE <span className="down-arrow" aria-hidden="true">↓</span></span></div></section>
     <aside className="manifesto"><div className="container manifesto-inner"><div className="manifesto-title">有設計的感受，也有實作的底氣。<br />讓每個細節，都回到使用者與品牌本身。</div><div className="manifesto-side mono">DESIGN THINKING <span aria-hidden="true">×</span> DEVELOPMENT<br />FOR BRANDS WHO WANT TO MOVE FORWARD.</div></div></aside>
     <Story scene={scene} progress={progress} storyRef={storyRef} />
-    <Services /><Works onProject={(project, trigger) => { lastFocus.current = trigger; setModalProject(project); }} /><Process /><Contact onSubmit={handleForm} />
-    {modalProject && <div className="modal-backdrop open" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) setModalProject(null); }}><div className="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabIndex={-1}><button className="modal-close" onClick={() => setModalProject(null)} aria-label="關閉視窗" autoFocus>×</button><span className="tag eyebrow">{projectContent[modalProject].label}</span><h3 id="modalTitle">{projectContent[modalProject].title}</h3><p>{projectContent[modalProject].text}</p><div>{projectContent[modalProject].tags.map((tag) => <span className="modal-pill" key={tag}>{tag}</span>)}</div></div></div>}
+    <Services /><Works onProject={(project, trigger) => { setModalProject({ key: project, trigger }); }} /><Process /><Contact onSubmit={handleForm} />
+    {modalProject && <ProjectModal project={projectContent[modalProject.key]} trigger={modalProject.trigger} onClosed={closeProject} />}
     <div className={`toast${toast ? " show" : ""}`} role="status" aria-live="polite">{toast}</div>
   </main>;
 }
