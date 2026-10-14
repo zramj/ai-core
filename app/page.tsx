@@ -3,6 +3,7 @@
 import { CSSProperties, FormEvent, RefObject, useEffect, useRef, useState } from "react";
 
 import HeroLogo from "./hero-logo";
+import ApproachVisuals from "./approach-visuals";
 
 type ProjectKey = "brand" | "system";
 
@@ -59,11 +60,7 @@ function Story({ scene, progress, storyRef }: { scene: number; progress: number;
     <div className="story-sticky">
       <div className="story-head eyebrow">OUR APPROACH <span>捲動探索</span></div>
       <div className="story-copy">{copy.map(([count, title, description], index) => <div className={`scene-copy${scene === index ? " active" : ""}`} key={count}><span className="scene-count mono">{count}</span><h2>{title}</h2><p>{description}</p></div>)}</div>
-      <div className="story-visual" aria-hidden="true">
-        <div className={`scene-graphic${scene === 0 ? " active" : ""}`}><div className="seed-symbol"><span /></div></div>
-        <div className={`scene-graphic${scene === 1 ? " active" : ""}`}><div className="wireframe"><div className="wire-head"><span /><span /><span /><i className="wire-line" /></div><div className="wire-body"><div><div className="wire-big">FORM<br />MEETS<br />IDEA.</div><div className="wire-sm" /><div className="wire-cta" /></div><div className="wire-art" /></div></div></div>
-        <div className={`scene-graphic${scene === 2 ? " active" : ""}`}><div className="site-ui"><div className="site-ui-top">AI CORE <span>WORK / ABOUT / CONTACT</span></div><div className="site-ui-main"><div><div className="site-ui-title">Made to<br />make sense.</div><div className="site-ui-copy">Where thoughtful design<br />meets purposeful development.</div><div className="site-ui-button">EXPLORE ↗</div></div><div className="site-ui-picture" /></div></div></div>
-      </div>
+      <ApproachVisuals scene={scene} />
       <div className="story-progress"><span className="mono progress-label">0{scene + 1} / 03</span><div className="track"><span className="fill" style={{ width: `${progress * 100}%` }} /></div><span className="mono progress-label">SCROLL ↓</span></div>
     </div>
   </section>;
