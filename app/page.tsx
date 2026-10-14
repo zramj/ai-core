@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, FormEvent, RefObject, useEffect, useRef, useState } from "react";
+import { useCallback, FormEvent, RefObject, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import Image from "next/image";
 
@@ -200,6 +200,26 @@ type ContactStatus = "idle" | "submitting" | "success" | "error";
 type SubmitContactRequest = (request: ContactRequest) => Promise<{ received: true }>;
 type ContactField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
+// Read browser URL only after hydration; production always receives null.
+function getContactPreview(): ContactStatus | null {
+  if (process.env.NODE_ENV !== "development") return null;
+  const preview = new URLSearchParams(window.location.search).get("contactPreview");
+  if (preview === "loading") return "submitting";
+  return preview === "success" || preview === "error" ? preview : null;
+}
+
+function subscribeContactPreview(onChange: () => void) {
+  if (process.env.NODE_ENV !== "development") return () => {};
+  window.addEventListener("popstate", onChange);
+  window.addEventListener("contact-preview-change", onChange);
+  return () => {
+    window.removeEventListener("popstate", onChange);
+    window.removeEventListener("contact-preview-change", onChange);
+  };
+}
+
+function getServerContactPreview() { return null; }
+
 // Replace null only after the corresponding account and official URL are ready.
 const contactLinks: Record<"line" | "instagram" | "facebook" | "threads", string | null> = {
   line: null,
@@ -242,9 +262,28 @@ function Contact({ submitRequest, submissionEnabled = false }: { submitRequest?:
   const [errors, setErrors] = useState<Partial<Record<keyof ContactRequest, string>>>({});
   const [status, setStatus] = useState<ContactStatus>("idle");
   const [isFormValid, setIsFormValid] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const resultTitleRef = useRef<HTMLHeadingElement>(null);
+  const submittingRef = useRef(false);
+  const previewStatus = useSyncExternalStore(subscribeContactPreview, getContactPreview, getServerContactPreview);
+  const displayStatus = previewStatus ?? status;
+  const showResult = displayStatus === "success" || displayStatus === "error";
   // A real receiving API and an explicit feature switch are both required.
   const isApiReady = Boolean(submitRequest) && submissionEnabled;
-  const canSubmit = isApiReady && isFormValid && status !== "submitting";
+  const canSubmit = isApiReady && isFormValid && status === "idle" && previewStatus === null;
+  useEffect(() => {
+    if (showResult) resultTitleRef.current?.focus({ preventScroll: true });
+  }, [showResult, displayStatus]);
+  const returnToForm = () => {
+    if (process.env.NODE_ENV === "development" && previewStatus !== null) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("contactPreview");
+      window.history.replaceState(window.history.state, "", url);
+      window.dispatchEvent(new Event("contact-preview-change"));
+    }
+    setStatus("idle");
+    requestAnimationFrame(() => formRef.current?.querySelector<HTMLInputElement>("#name")?.focus({ preventScroll: true }));
+  };
   const updateFormValidity = (form: HTMLFormElement | null) => {
     if (form) setIsFormValid(contactFormFields(form).every((field) => !contactFieldError(field)));
   };
@@ -254,7 +293,7 @@ function Contact({ submitRequest, submissionEnabled = false }: { submitRequest?:
   };
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!isApiReady || !submitRequest || status === "submitting") return;
+    if (!isApiReady || !submitRequest || status !== "idle" || submittingRef.current || previewStatus !== null) return;
     const form = event.currentTarget;
     const fields = contactFormFields(form);
     const nextErrors = Object.fromEntries(fields.map((field) => [field.name, contactFieldError(field)]));
@@ -270,6 +309,7 @@ function Contact({ submitRequest, submissionEnabled = false }: { submitRequest?:
       type: String(data.get("type") || ""),
       detail: String(data.get("detail") || "").trim(),
     };
+    submittingRef.current = true;
     setStatus("submitting");
     try {
       const result = await submitRequest(request);
@@ -278,6 +318,7 @@ function Contact({ submitRequest, submissionEnabled = false }: { submitRequest?:
       form.reset();
       setIsFormValid(false);
     } catch { setStatus("error"); }
+    finally { submittingRef.current = false; }
   };
   const fieldProps = (name: keyof ContactRequest) => ({
     "aria-invalid": Boolean(errors[name]),
@@ -304,15 +345,28 @@ function Contact({ submitRequest, submissionEnabled = false }: { submitRequest?:
         </div>
       </div>
     </div>
-    <form className="contact-form reveal" onSubmit={handleSubmit} noValidate aria-busy={status === "submitting"}>
+    <form ref={formRef} className="contact-form reveal" onSubmit={handleSubmit} noValidate aria-busy={displayStatus === "submitting"}>
+      {/* Keep fields mounted so returning from an error preserves every value. */}
+      <div className="contact-form-fields" hidden={showResult}>
       <div className="form-title"><strong>聊聊你的專案</strong></div>
       <div className="field"><label htmlFor="name">怎麼稱呼你？ *</label><input id="name" name="name" placeholder="姓名或品牌名稱" autoComplete="name" required maxLength={80} {...fieldProps("name")} />{errorMessage("name")}</div>
       <div className="field"><label htmlFor="phone">聯絡電話 *</label><input id="phone" name="phone" type="tel" placeholder="0912 345 678" autoComplete="tel" required maxLength={40} {...fieldProps("phone")} />{errorMessage("phone")}</div>
       <div className="field"><label htmlFor="email">聯絡 Email *</label><input id="email" name="email" type="email" placeholder="hello@example.com" autoComplete="email" required maxLength={254} {...fieldProps("email")} />{errorMessage("email")}</div>
       <div className="field"><label htmlFor="type">這次想做什麼？ *</label><select id="type" name="type" required defaultValue="" {...fieldProps("type")}><option value="" disabled>請選擇最接近的需求</option>{contactTypes.map((type) => <option key={type} value={type}>{type}</option>)}</select>{errorMessage("type")}</div>
       <div className="field field-wide"><label htmlFor="detail">簡單說說你的想法 *</label><textarea id="detail" name="detail" placeholder="想解決什麼問題？目前有哪些想法？" required maxLength={1800} {...fieldProps("detail")} />{errorMessage("detail")}</div>
-      <button type="submit" className="form-send" disabled={!canSubmit} aria-describedby="contact-status">{status === "submitting" ? "送出中…" : "送出合作需求"} <span aria-hidden="true">↗</span></button>
-      <p className="form-notice" id="contact-status" role="status" aria-live="polite">{!isApiReady ? "線上表單尚未開放，目前無法送出資料。" : status === "submitting" ? "正在送出，請稍候。" : status === "success" ? "合作需求已送出，謝謝你的分享。" : status === "error" ? "送出失敗，請稍後再試。" : "＊為必填欄位。"}</p>
+      <button type="submit" className="form-send" disabled={!canSubmit} aria-describedby="contact-status">{displayStatus === "submitting" ? "傳送中…" : "送出合作需求"} <span aria-hidden="true">↗</span></button>
+      <p className="form-notice" id="contact-status" role="status" aria-live="polite">{previewStatus !== null ? "本機狀態預覽，未傳送任何資料。" : displayStatus === "submitting" ? "正在送出，請稍候。" : !isApiReady ? "線上表單尚未開放，目前無法送出資料。" : "＊為必填欄位。"}</p>
+      {previewStatus === "submitting" && <button type="button" className="contact-preview-return" onClick={returnToForm}>結束預覽，返回表單</button>}
+      </div>
+      {showResult && <div className="contact-result" role="status" aria-live="polite">
+        <svg className="contact-result-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+          {displayStatus === "success" ? <><circle cx="24" cy="24" r="19" /><path d="m15 24 6 6 12-12" /></> : <><path d="M21 7 4 36a3.5 3.5 0 0 0 3 5h34a3.5 3.5 0 0 0 3-5L27 7a3.5 3.5 0 0 0-6 0Z" /><path d="M24 17v11m0 6h.01" /></>}
+        </svg>
+        <h3 ref={resultTitleRef} tabIndex={-1}>{displayStatus === "success" ? "合作需求已成功送出" : "需求尚未成功送出"}</h3>
+        <p>{displayStatus === "success" ? "我們已收到你的合作需求，將盡快透過 Email 與你聯繫。" : "傳送時發生問題，請稍後再試一次，或透過 Email 聯絡我們。"}</p>
+        {previewStatus !== null && <p className="form-notice">本機狀態預覽，未傳送任何資料。</p>}
+        {displayStatus === "error" ? <button type="button" className="contact-result-return" onClick={returnToForm}>保留資料，返回表單</button> : previewStatus !== null && <button type="button" className="contact-result-return" onClick={returnToForm}>結束預覽，返回表單</button>}
+      </div>}
     </form>
   </div><footer className="footer"><div><strong>AI CORE / 艾構</strong><br /><br />DESIGN &amp; DEVELOPMENT STUDIO</div><div>WEB CONCEPT V2 · 2026<br />ai-core.si（預定品牌網址）</div><div>© AI CORE · MADE WITH INTENT.</div></footer></div></section>;
 }

@@ -99,3 +99,16 @@ html{scroll-behavior:smooth;scroll-padding-top:88px}body{background:var(--paper)
   caret-color:#F5F5F5;
 }
 @media(max-width:767px){.contact-form{grid-template-columns:minmax(0,1fr)}}
+
+/* CONTACT submission states reuse the existing card and keep its fields mounted. */
+.contact-form-fields{display:contents}
+.contact-form-fields[hidden]{display:none}
+.contact-result{grid-column:1 / -1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:440px;padding:32px 0;text-align:center;gap:20px}
+.contact-result-icon{width:48px;height:48px;color:var(--accent);flex-shrink:0}
+.contact-result h3{margin:4px 0 0;font-size:22px;font-weight:550;line-height:1.5;letter-spacing:-.025em}
+.contact-result h3:focus{outline:none}
+.contact-result>p{max-width:30em;margin:0;color:#C2C3C8;font-size:14px;line-height:1.9}
+.contact-result>.form-notice{font-size:11px}
+.contact-result-return{margin-top:12px;padding:12px 20px;border:1px solid #55565B;border-radius:6px;background:transparent;color:var(--accent);font-size:13px;line-height:1.6}
+.contact-result-return:hover{border-color:var(--accent)}
+.contact-preview-return{grid-column:1 / -1;justify-self:start;padding:0;border:0;background:transparent;color:var(--accent);font-size:11px;line-height:1.75;text-decoration:underline;text-underline-offset:3px}
