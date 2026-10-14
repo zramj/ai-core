@@ -1,11 +1,11 @@
 "use client";
 
-import { CSSProperties, FormEvent, RefObject, useEffect, useRef, useState } from "react";
+import { FormEvent, RefObject, useEffect, useRef, useState } from "react";
+
+import Image from "next/image";
 
 import HeroLogo from "./hero-logo";
 import ApproachVisuals from "./approach-visuals";
-
-type ProjectKey = "brand" | "system";
 
 const services = [
   ["01 / 04", "品牌形象網站", "把品牌的特色、內容與價值整理清楚，建立兼具美感和辨識度的網站。", "BRAND WEBSITES"],
@@ -22,17 +22,39 @@ const processItems = [
 ] as const;
 
 const projectContent = {
-  brand: {
-    title: "品牌形象網站",
-    text: "這是一個展示視覺風格的假想品牌官網範例：使用編輯式大字排版、品牌故事與留白，示範如何讓商品及內容成為視覺焦點。正式合作時，會依品牌內容重新設計，不會直接套用。",
-    tags: ["品牌內容策略", "視覺風格", "響應式網站"],
+  yijia: {
+    label: "01 · BRAND WEBSITE",
+    name: "翊佳室內設計",
+    subtitle: "空間美學 × 品牌形象",
+    image: "/images/works/yijia-interior.jpg",
+    title: "翊佳室內設計",
+    text: "以空間作品為主角，搭配清楚的導覽與服務資訊，呈現室內設計品牌的專業形象，讓訪客更容易認識品牌風格。",
+    tags: ["空間作品展示", "服務介紹", "線上預約"],
+    url: "https://www.yijia-interior.com/",
   },
-  system: {
-    title: "客製化管理介面",
-    text: "這是一個假想數位工作台的畫面示意：以清楚的資訊階層與操作流程呈現複雜資料。實際系統功能、資料結構與開發方式，都必須依專案需求評估。",
-    tags: ["資訊架構", "UI／UX 設計", "前後端開發"],
+  jinyan: {
+    label: "02 · DIGITAL E-BOOK",
+    name: "靜妍美學電子書",
+    subtitle: "美容服務 × 數位閱讀",
+    image: "/images/works/jinyan-ebook.jpg",
+    title: "靜妍美學電子書",
+    text: "將美容服務與產品資訊整理成直覺易讀的數位電子書，方便顧客透過平板或手機瀏覽，讓店內的服務介紹更加清晰。",
+    tags: ["療程資訊", "產品介紹", "跨裝置閱讀"],
+    url: "https://jinyanbeauty.github.io/jin-yan-ebook/",
+  },
+  letsStudy: {
+    label: "03 · COMMUNITY PLATFORM",
+    name: "Let's Study",
+    subtitle: "讀書會媒合 × 閱讀交流",
+    image: "/images/works/lets-study.jpg",
+    title: "Let's Study｜讀書會媒合平台",
+    text: "以興趣分類、活動搜尋與時間地點資訊為核心，構想一個讓讀者更容易探索讀書會、找到合適交流活動的平台。",
+    tags: ["讀書會探索", "興趣分類", "活動資訊"],
+    url: "https://leststudymu-lq6xv.kinsta.page/index.html",
   },
 } as const;
+
+type ProjectKey = keyof typeof projectContent;
 
 function Header({ menuOpen, onMenuToggle, onCloseMenu }: { menuOpen: boolean; onMenuToggle: () => void; onCloseMenu: () => void }) {
   return <>
@@ -75,13 +97,15 @@ function Services() {
 }
 
 function ProjectArt({ variant }: { variant: ProjectKey }) {
-  if (variant === "brand") return <div className="project-view project-a"><div className="project-art-a"><div className="demo-top"><b>FORME.</b><span>ABOUT / JOURNAL / CONTACT</span></div><div className="demo-panel"><div className="demo-left"><strong>Objects<br />of quiet<br />beauty.</strong><small>A place for everyday rituals and simple living.</small></div><div className="demo-right"><div className="demo-sculpt" /></div></div></div></div>;
-  return <div className="project-view project-b"><div className="project-b-ui"><div className="dash-label mono">WORKSPACE / OVERVIEW</div><div className="dash-head">Your dashboard <span>+ CREATE NEW</span></div><div className="dash-cards"><div className="dash-card">TOTAL PROJECTS<strong>24</strong>ACTIVE</div><div className="dash-card">COMPLETED<strong>16</strong>THIS YEAR</div><div className="dash-card">ACTIVITY<div className="dash-lines">{[35, 58, 44, 75, 51, 90, 65].map((height) => <i key={height} style={{ "--h": `${height}%` } as CSSProperties} />)}</div></div></div></div></div>;
+  const project = projectContent[variant];
+  return <div className="project-view"><div className="project-screenshot"><Image src={project.image} alt={`${project.name}網站畫面`} fill sizes="(max-width: 560px) 88vw, (max-width: 1100px) 44vw, 30vw" /></div></div>;
 }
 
 function Works({ onProject }: { onProject: (project: ProjectKey, trigger: HTMLButtonElement) => void }) {
-  const metadata = { brand: ["CONCEPT 01 · VISUAL DEMO", "品牌形象網站", "視覺敘事 × 品牌內容"], system: ["CONCEPT 02 · UI DEMO", "客製化管理介面", "資訊架構 × 功能與流程設計"] } as const;
-  return <section className="selected" id="works"><div className="container"><SectionHeader eyebrow="02 — VISUAL EXPLORATION" title={<>不套公式，<br />找到自己的樣子。</>} description="不同目標，需要不同的設計語言。以下展示兩種可能的畫面方向，讓你更容易想像合作成果。" /><div className="project-grid">{(["brand", "system"] as ProjectKey[]).map((project) => <button className="project reveal" key={project} onClick={(event) => onProject(project, event.currentTarget)} aria-label={project === "brand" ? "查看品牌網站概念示意介紹" : "查看客製化介面概念示意介紹"}><ProjectArt variant={project} /><div className="project-meta"><div><span className="eyebrow muted">{metadata[project][0]}</span><h3>{metadata[project][1]}</h3><p>{metadata[project][2]}</p></div><span className="circle-arrow" aria-hidden="true">↗</span></div></button>)}</div><div className="projects-note">這是為首頁建立的「概念示意畫面」，並非艾構已完成的客戶專案；正式案例可以之後替換。</div></div></section>;
+  return <section className="selected" id="works"><div className="container"><SectionHeader eyebrow="02 — VISUAL EXPLORATION" title={<>不套公式，<br />找到自己的樣子。</>} description="從品牌網站到數位服務，探索清晰、實用的線上體驗。" /><div className="project-grid">{(Object.keys(projectContent) as ProjectKey[]).map((project) => {
+    const content = projectContent[project];
+    return <button className="project reveal" key={project} onClick={(event) => onProject(project, event.currentTarget)} aria-label={`查看${content.name}作品介紹`}><ProjectArt variant={project} /><div className="project-meta"><div><span className="eyebrow muted">{content.label}</span><h3>{content.name}</h3><p>{content.subtitle}</p></div><span className="circle-arrow" aria-hidden="true">↗</span></div></button>;
+  })}</div></div></section>;
 }
 
 function Process() {
@@ -150,7 +174,7 @@ export default function Home() {
     <aside className="manifesto"><div className="container manifesto-inner"><div className="manifesto-title">有設計的感受，也有實作的底氣。<br />讓每個細節，都回到使用者與品牌本身。</div><div className="manifesto-side mono">DESIGN THINKING <span aria-hidden="true">×</span> DEVELOPMENT<br />FOR BRANDS WHO WANT TO MOVE FORWARD.</div></div></aside>
     <Story scene={scene} progress={progress} storyRef={storyRef} />
     <Services /><Works onProject={(project, trigger) => { lastFocus.current = trigger; setModalProject(project); }} /><Process /><Contact onSubmit={handleForm} />
-    {modalProject && <div className="modal-backdrop open" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) setModalProject(null); }}><div className="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabIndex={-1}><button className="modal-close" onClick={() => setModalProject(null)} aria-label="關閉視窗" autoFocus>×</button><span className="tag eyebrow">VISUAL CONCEPT · NOT A CLIENT PROJECT</span><h3 id="modalTitle">{projectContent[modalProject].title}</h3><p>{projectContent[modalProject].text}</p><div>{projectContent[modalProject].tags.map((tag) => <span className="modal-pill" key={tag}>{tag}</span>)}</div></div></div>}
+    {modalProject && <div className="modal-backdrop open" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) setModalProject(null); }}><div className="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabIndex={-1}><button className="modal-close" onClick={() => setModalProject(null)} aria-label="關閉視窗" autoFocus>×</button><span className="tag eyebrow">{projectContent[modalProject].label}</span><h3 id="modalTitle">{projectContent[modalProject].title}</h3><p>{projectContent[modalProject].text}</p><div>{projectContent[modalProject].tags.map((tag) => <span className="modal-pill" key={tag}>{tag}</span>)}</div></div></div>}
     <div className={`toast${toast ? " show" : ""}`} role="status" aria-live="polite">{toast}</div>
   </main>;
 }
