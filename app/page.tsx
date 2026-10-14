@@ -269,10 +269,10 @@ function Contact({ submitRequest }: { submitRequest?: SubmitContactRequest }) {
     <form className="contact-form reveal" onSubmit={handleSubmit} noValidate aria-busy={status === "submitting"}>
       <div className="form-title"><strong>聊聊你的專案</strong></div>
       <div className="field"><label htmlFor="name">怎麼稱呼你？ *</label><input id="name" name="name" placeholder="姓名或品牌名稱" autoComplete="name" required maxLength={80} {...fieldProps("name")} />{errorMessage("name")}</div>
-      <div className="field"><label htmlFor="email">聯絡 Email *</label><input id="email" name="email" type="email" placeholder="hello@example.com" autoComplete="email" required maxLength={254} {...fieldProps("email")} />{errorMessage("email")}</div>
       <div className="field"><label htmlFor="phone">聯絡電話 *</label><input id="phone" name="phone" type="tel" placeholder="0912 345 678" autoComplete="tel" required maxLength={40} {...fieldProps("phone")} />{errorMessage("phone")}</div>
+      <div className="field"><label htmlFor="email">聯絡 Email *</label><input id="email" name="email" type="email" placeholder="hello@example.com" autoComplete="email" required maxLength={254} {...fieldProps("email")} />{errorMessage("email")}</div>
       <div className="field"><label htmlFor="type">這次想做什麼？ *</label><select id="type" name="type" required defaultValue="" {...fieldProps("type")}><option value="" disabled>請選擇最接近的需求</option>{contactTypes.map((type) => <option key={type} value={type}>{type}</option>)}</select>{errorMessage("type")}</div>
-      <div className="field"><label htmlFor="detail">簡單說說你的想法 *</label><textarea id="detail" name="detail" placeholder="想解決什麼問題？目前有哪些想法？" required maxLength={1800} {...fieldProps("detail")} />{errorMessage("detail")}</div>
+      <div className="field field-wide"><label htmlFor="detail">簡單說說你的想法 *</label><textarea id="detail" name="detail" placeholder="想解決什麼問題？目前有哪些想法？" required maxLength={1800} {...fieldProps("detail")} />{errorMessage("detail")}</div>
       <button type="submit" className="form-send" disabled={!submitRequest || status === "submitting"} aria-describedby="contact-status">{status === "submitting" ? "送出中…" : "送出合作需求"} <span aria-hidden="true">↗</span></button>
       <p className="form-notice" id="contact-status" role="status" aria-live="polite">{!submitRequest ? "線上表單尚未開放，目前無法送出資料。" : status === "submitting" ? "正在送出，請稍候。" : status === "success" ? "合作需求已送出，謝謝你的分享。" : status === "error" ? "送出失敗，請稍後再試。" : "＊為必填欄位。"}</p>
     </form>
