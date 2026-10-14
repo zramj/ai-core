@@ -200,6 +200,24 @@ type ContactStatus = "idle" | "submitting" | "success" | "error";
 type SubmitContactRequest = (request: ContactRequest) => Promise<{ received: true }>;
 type ContactField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
+// Replace null only after the corresponding account and official URL are ready.
+const contactLinks: Record<"line" | "instagram" | "facebook" | "threads", string | null> = {
+  line: null,
+  instagram: null,
+  facebook: null,
+  threads: null,
+};
+
+function ContactLink({ href, className, label, children }: { href: string | null; className: string; label?: string; children: React.ReactNode }) {
+  return href
+    ? <a className={className} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>{children}</a>
+    : <span className={className} role="link" aria-disabled="true" aria-label={label}>{children}</span>;
+}
+
+function contactFormFields(form: HTMLFormElement) {
+  return Array.from(form.elements).filter((field): field is ContactField => field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement);
+}
+
 const contactTypes = [
   "企業／品牌形象官網",
   "一頁式網站／活動頁面",
@@ -220,23 +238,30 @@ function contactFieldError(field: ContactField) {
   return "";
 }
 
-function Contact({ submitRequest }: { submitRequest?: SubmitContactRequest }) {
+function Contact({ submitRequest, submissionEnabled = false }: { submitRequest?: SubmitContactRequest; submissionEnabled?: boolean }) {
   const [errors, setErrors] = useState<Partial<Record<keyof ContactRequest, string>>>({});
   const [status, setStatus] = useState<ContactStatus>("idle");
+  const [isFormValid, setIsFormValid] = useState(false);
+  // A real receiving API and an explicit feature switch are both required.
+  const isApiReady = Boolean(submitRequest) && submissionEnabled;
+  const canSubmit = isApiReady && isFormValid && status !== "submitting";
+  const updateFormValidity = (form: HTMLFormElement | null) => {
+    if (form) setIsFormValid(contactFormFields(form).every((field) => !contactFieldError(field)));
+  };
   const validateField = (field: ContactField) => {
     setErrors((current) => ({ ...current, [field.name]: contactFieldError(field) }));
+    updateFormValidity(field.form);
   };
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (status === "submitting") return;
+    if (!isApiReady || !submitRequest || status === "submitting") return;
     const form = event.currentTarget;
-    const fields = Array.from(form.elements).filter((field): field is ContactField => field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement);
+    const fields = contactFormFields(form);
     const nextErrors = Object.fromEntries(fields.map((field) => [field.name, contactFieldError(field)]));
     setErrors(nextErrors);
     const firstInvalid = fields.find((field) => nextErrors[field.name]);
+    setIsFormValid(!firstInvalid);
     if (firstInvalid) { firstInvalid.focus(); return; }
-    // No API is configured today: never send, copy, or report success in this branch.
-    if (!submitRequest) return;
     const data = new FormData(form);
     const request: ContactRequest = {
       name: String(data.get("name") || "").trim(),
@@ -251,6 +276,7 @@ function Contact({ submitRequest }: { submitRequest?: SubmitContactRequest }) {
       if (result.received !== true) throw new Error("Receipt not confirmed");
       setStatus("success");
       form.reset();
+      setIsFormValid(false);
     } catch { setStatus("error"); }
   };
   const fieldProps = (name: keyof ContactRequest) => ({
@@ -258,6 +284,7 @@ function Contact({ submitRequest }: { submitRequest?: SubmitContactRequest }) {
     "aria-describedby": errors[name] ? `${name}-error` : undefined,
     onBlur: (event: React.FocusEvent<ContactField>) => validateField(event.currentTarget),
     onChange: (event: React.ChangeEvent<ContactField>) => {
+      updateFormValidity(event.currentTarget.form);
       if (errors[name]) validateField(event.currentTarget);
       if (status === "success" || status === "error") setStatus("idle");
     },
@@ -265,7 +292,18 @@ function Contact({ submitRequest }: { submitRequest?: SubmitContactRequest }) {
   const errorMessage = (name: keyof ContactRequest) => errors[name] && <p className="field-error" id={`${name}-error`} aria-live="polite">{errors[name]}</p>;
 
   return <section className="contact" id="contact"><div className="container"><div className="contact-grid">
-    <div className="reveal"><span className="eyebrow">04 — LET&apos;S START A CONVERSATION</span><h2>你的想法，<br /><span>一起完成。</span></h2><p className="contact-info">正在規劃新網站、想改善既有體驗，或有需要客製化的功能？先留下初步需求，就從這裡開始。</p></div>
+    <div className="reveal"><span className="eyebrow">04 — LET&apos;S START A CONVERSATION</span><h2>你的想法，<br /><span>一起完成。</span></h2><p className="contact-info">正在規劃新網站、想改善既有體驗，或有需要客製化的功能？先留下初步需求，就從這裡開始。</p>
+      <div className="contact-details">
+        <a className="contact-email" href="mailto:mmcome9999@gmail.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 6 9 7 9-7" /></svg><span>mmcome9999@gmail.com</span></a>
+        <ContactLink href={contactLinks.line} className="contact-line"><span>加入 <span className="contact-line-brand">LINE</span> 帳號</span><span aria-hidden="true">↗</span></ContactLink>
+        <div className="contact-socials">
+          <ContactLink href={contactLinks.instagram} className="contact-social" label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" /></svg></ContactLink>
+          <ContactLink href={contactLinks.facebook} className="contact-social" label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M14 22v-9h3l.5-4H14V6.5c0-1.1.3-1.5 1.5-1.5H18V1.3A27 27 0 0 0 14.8 1C11.6 1 10 2.8 10 6v3H7v4h3v9Z" /></svg></ContactLink>
+          {/* Threads brand path: https://github.com/simple-icons/simple-icons/blob/develop/icons/threads.svg (CC0). */}
+          <ContactLink href={contactLinks.threads} className="contact-social" label="Threads"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M18.263 11.097c-.03-3.486-1.92-5.586-5.111-5.586-2.13 0-3.922.963-4.863 2.499l2.062 1.438c.535-.843 1.272-1.543 2.628-1.543 1.528 0 2.318.85 2.544 2.431a15 15 0 0 0-2.236-.173c-4.125 0-6.068 1.867-6.068 4.336s1.943 3.99 4.804 3.99c3.139 0 5.013-2.115 5.781-4.735.798.361 1.348 1.204 1.348 2.47 0 3.387-3.907 5.232-7.22 5.232-4.885 0-8.077-3.207-8.077-8.424 0-6.392 4.223-10.487 9.9-10.487 3.808 0 5.69 1.671 6.97 3.914l2.108-1.475C21.44 2.078 18.331 0 13.663 0 6.227 0 1.168 5.277 1.168 12.934c0 7 4.953 11.066 10.856 11.066 4.878 0 9.809-2.846 9.809-7.716 0-2.545-1.46-4.231-3.569-5.187m-6.33 4.855c-1.077 0-2.026-.512-2.026-1.453 0-1.483 1.822-1.934 3.606-1.934.678 0 1.34.045 1.927.173-.422 1.927-1.671 3.215-3.508 3.214Z" /></svg></ContactLink>
+        </div>
+      </div>
+    </div>
     <form className="contact-form reveal" onSubmit={handleSubmit} noValidate aria-busy={status === "submitting"}>
       <div className="form-title"><strong>聊聊你的專案</strong></div>
       <div className="field"><label htmlFor="name">怎麼稱呼你？ *</label><input id="name" name="name" placeholder="姓名或品牌名稱" autoComplete="name" required maxLength={80} {...fieldProps("name")} />{errorMessage("name")}</div>
@@ -273,8 +311,8 @@ function Contact({ submitRequest }: { submitRequest?: SubmitContactRequest }) {
       <div className="field"><label htmlFor="email">聯絡 Email *</label><input id="email" name="email" type="email" placeholder="hello@example.com" autoComplete="email" required maxLength={254} {...fieldProps("email")} />{errorMessage("email")}</div>
       <div className="field"><label htmlFor="type">這次想做什麼？ *</label><select id="type" name="type" required defaultValue="" {...fieldProps("type")}><option value="" disabled>請選擇最接近的需求</option>{contactTypes.map((type) => <option key={type} value={type}>{type}</option>)}</select>{errorMessage("type")}</div>
       <div className="field field-wide"><label htmlFor="detail">簡單說說你的想法 *</label><textarea id="detail" name="detail" placeholder="想解決什麼問題？目前有哪些想法？" required maxLength={1800} {...fieldProps("detail")} />{errorMessage("detail")}</div>
-      <button type="submit" className="form-send" disabled={!submitRequest || status === "submitting"} aria-describedby="contact-status">{status === "submitting" ? "送出中…" : "送出合作需求"} <span aria-hidden="true">↗</span></button>
-      <p className="form-notice" id="contact-status" role="status" aria-live="polite">{!submitRequest ? "線上表單尚未開放，目前無法送出資料。" : status === "submitting" ? "正在送出，請稍候。" : status === "success" ? "合作需求已送出，謝謝你的分享。" : status === "error" ? "送出失敗，請稍後再試。" : "＊為必填欄位。"}</p>
+      <button type="submit" className="form-send" disabled={!canSubmit} aria-describedby="contact-status">{status === "submitting" ? "送出中…" : "送出合作需求"} <span aria-hidden="true">↗</span></button>
+      <p className="form-notice" id="contact-status" role="status" aria-live="polite">{!isApiReady ? "線上表單尚未開放，目前無法送出資料。" : status === "submitting" ? "正在送出，請稍候。" : status === "success" ? "合作需求已送出，謝謝你的分享。" : status === "error" ? "送出失敗，請稍後再試。" : "＊為必填欄位。"}</p>
     </form>
   </div><footer className="footer"><div><strong>AI CORE / 艾構</strong><br /><br />DESIGN &amp; DEVELOPMENT STUDIO</div><div>WEB CONCEPT V2 · 2026<br />ai-core.si（預定品牌網址）</div><div>© AI CORE · MADE WITH INTENT.</div></footer></div></section>;
 }
