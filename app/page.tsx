@@ -187,8 +187,96 @@ function Process() {
   return <><section className="process" id="approach"><div className="container process-wrap"><div className="reveal"><span className="eyebrow">03 — HOW WE WORK</span><h2 className="process-title">好好溝通，<br />把事情<br />做好。</h2><p className="process-intro">不需要一開始就有完整規格。先說說你的想法，我們再一起找出合適的做法。</p></div><div className="process-items reveal">{processItems.map(([title, text], index) => <div className="process-item" key={title}><span className="idx mono">0{index + 1}</span><div><h3>{title}</h3><p>{text}</p></div><span className="plus">↗</span></div>)}</div></div></section><section className="why"><div className="container why-inner"><div className="reveal"><span className="eyebrow">A SMALL STUDIO, ONE CLEAR IDEA</span><h2 className="why-quote">好的合作，<br />是讓複雜的事<br />變得更清楚。</h2></div><div className="why-right reveal"><p>艾構是結合設計與技術的獨立工作室。我們希望每一個決策都能回應真實需求，而不是為了追求流行或堆疊不必要的功能。</p><p className="mono why-signoff">DESIGN WITH CLARITY. BUILD WITH PURPOSE.</p></div></div></section></>;
 }
 
-function Contact({ onSubmit }: { onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
-  return <section className="contact" id="contact"><div className="container"><div className="contact-grid"><div className="reveal"><span className="eyebrow">04 — LET&apos;S START A CONVERSATION</span><h2>你的想法，<br /><span>一起完成。</span></h2><p className="contact-info">正在規劃新網站、想改善既有體驗，或有需要客製化的功能？先留下初步需求，就從這裡開始。</p></div><form className="contact-form reveal" onSubmit={onSubmit}><div className="form-title"><strong>專案需求整理</strong><small className="mono">/ PROTOTYPE</small></div><div className="field"><label htmlFor="name">怎麼稱呼你？ *</label><input id="name" name="name" placeholder="姓名或品牌名稱" required maxLength={80} /></div><div className="field"><label htmlFor="type">這次想做什麼？</label><select id="type" name="type"><option>品牌形象網站</option><option>一頁式／活動網站</option><option>UI／UX 介面設計</option><option>網站與客製化系統</option><option>還不太確定，想先聊聊</option></select></div><div className="field"><label htmlFor="detail">簡單說說你的想法 *</label><textarea id="detail" name="detail" placeholder="想解決什麼問題？目前有哪些想法？" required maxLength={1800} /></div><button type="submit" className="form-send">複製需求摘要 <span>↗</span></button><p className="form-notice">此為可操作的網站原型，表單尚未連接正式收件服務。按鈕會將需求整理成文字並複製，不會傳送你的資料。</p></form></div><footer className="footer"><div><strong>AI CORE / 艾構</strong><br /><br />DESIGN &amp; DEVELOPMENT STUDIO</div><div>WEB CONCEPT V2 · 2026<br />ai-core.si（預定品牌網址）</div><div>© AI CORE · MADE WITH INTENT.</div></footer></div></section>;
+type ContactRequest = {
+  name: string;
+  email: string;
+  phone: string;
+  type: string;
+  detail: string;
+};
+type ContactStatus = "idle" | "submitting" | "success" | "error";
+// Future API boundary: supply this only after a real receiving service is connected.
+// Resolve with received: true only when the service confirms receipt; reject on failure.
+type SubmitContactRequest = (request: ContactRequest) => Promise<{ received: true }>;
+type ContactField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+
+const contactTypes = [
+  "企業／品牌形象官網",
+  "一頁式網站／活動頁面",
+  "既有網站改版／優化",
+  "網站功能／客製化開發",
+  "還不確定，想先聊聊",
+] as const;
+
+function contactFieldError(field: ContactField) {
+  const value = field.value.trim();
+  if (!value) return "此欄位為必填，請填寫或選擇。";
+  if (field.name === "email" && (field.validity.typeMismatch || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))) return "請輸入有效的 Email，例如 hello@example.com。";
+  if (field.name === "phone") {
+    const digits = value.replace(/\D/g, "");
+    if (!/^\+?[0-9 ()-]+$/.test(value) || digits.length < 7 || digits.length > 15) return "請輸入有效的電話，例如 0912 345 678、02-2345-6789 或 +886 912 345 678。";
+  }
+  if (field.name === "type" && !contactTypes.some((type) => type === value)) return "請選擇最接近的需求。";
+  return "";
+}
+
+function Contact({ submitRequest }: { submitRequest?: SubmitContactRequest }) {
+  const [errors, setErrors] = useState<Partial<Record<keyof ContactRequest, string>>>({});
+  const [status, setStatus] = useState<ContactStatus>("idle");
+  const validateField = (field: ContactField) => {
+    setErrors((current) => ({ ...current, [field.name]: contactFieldError(field) }));
+  };
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (status === "submitting") return;
+    const form = event.currentTarget;
+    const fields = Array.from(form.elements).filter((field): field is ContactField => field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement);
+    const nextErrors = Object.fromEntries(fields.map((field) => [field.name, contactFieldError(field)]));
+    setErrors(nextErrors);
+    const firstInvalid = fields.find((field) => nextErrors[field.name]);
+    if (firstInvalid) { firstInvalid.focus(); return; }
+    // No API is configured today: never send, copy, or report success in this branch.
+    if (!submitRequest) return;
+    const data = new FormData(form);
+    const request: ContactRequest = {
+      name: String(data.get("name") || "").trim(),
+      email: String(data.get("email") || "").trim(),
+      phone: String(data.get("phone") || "").trim(),
+      type: String(data.get("type") || ""),
+      detail: String(data.get("detail") || "").trim(),
+    };
+    setStatus("submitting");
+    try {
+      const result = await submitRequest(request);
+      if (result.received !== true) throw new Error("Receipt not confirmed");
+      setStatus("success");
+      form.reset();
+    } catch { setStatus("error"); }
+  };
+  const fieldProps = (name: keyof ContactRequest) => ({
+    "aria-invalid": Boolean(errors[name]),
+    "aria-describedby": errors[name] ? `${name}-error` : undefined,
+    onBlur: (event: React.FocusEvent<ContactField>) => validateField(event.currentTarget),
+    onChange: (event: React.ChangeEvent<ContactField>) => {
+      if (errors[name]) validateField(event.currentTarget);
+      if (status === "success" || status === "error") setStatus("idle");
+    },
+  });
+  const errorMessage = (name: keyof ContactRequest) => errors[name] && <p className="field-error" id={`${name}-error`} aria-live="polite">{errors[name]}</p>;
+
+  return <section className="contact" id="contact"><div className="container"><div className="contact-grid">
+    <div className="reveal"><span className="eyebrow">04 — LET&apos;S START A CONVERSATION</span><h2>你的想法，<br /><span>一起完成。</span></h2><p className="contact-info">正在規劃新網站、想改善既有體驗，或有需要客製化的功能？先留下初步需求，就從這裡開始。</p></div>
+    <form className="contact-form reveal" onSubmit={handleSubmit} noValidate aria-busy={status === "submitting"}>
+      <div className="form-title"><strong>聊聊你的專案</strong></div>
+      <div className="field"><label htmlFor="name">怎麼稱呼你？ *</label><input id="name" name="name" placeholder="姓名或品牌名稱" autoComplete="name" required maxLength={80} {...fieldProps("name")} />{errorMessage("name")}</div>
+      <div className="field"><label htmlFor="email">聯絡 Email *</label><input id="email" name="email" type="email" placeholder="hello@example.com" autoComplete="email" required maxLength={254} {...fieldProps("email")} />{errorMessage("email")}</div>
+      <div className="field"><label htmlFor="phone">聯絡電話 *</label><input id="phone" name="phone" type="tel" placeholder="0912 345 678" autoComplete="tel" required maxLength={40} {...fieldProps("phone")} />{errorMessage("phone")}</div>
+      <div className="field"><label htmlFor="type">這次想做什麼？ *</label><select id="type" name="type" required defaultValue="" {...fieldProps("type")}><option value="" disabled>請選擇最接近的需求</option>{contactTypes.map((type) => <option key={type} value={type}>{type}</option>)}</select>{errorMessage("type")}</div>
+      <div className="field"><label htmlFor="detail">簡單說說你的想法 *</label><textarea id="detail" name="detail" placeholder="想解決什麼問題？目前有哪些想法？" required maxLength={1800} {...fieldProps("detail")} />{errorMessage("detail")}</div>
+      <button type="submit" className="form-send" disabled={!submitRequest || status === "submitting"} aria-describedby="contact-status">{status === "submitting" ? "送出中…" : "送出合作需求"} <span aria-hidden="true">↗</span></button>
+      <p className="form-notice" id="contact-status" role="status" aria-live="polite">{!submitRequest ? "線上表單尚未開放，目前無法送出資料。" : status === "submitting" ? "正在送出，請稍候。" : status === "success" ? "合作需求已送出，謝謝你的分享。" : status === "error" ? "送出失敗，請稍後再試。" : "＊為必填欄位。"}</p>
+    </form>
+  </div><footer className="footer"><div><strong>AI CORE / 艾構</strong><br /><br />DESIGN &amp; DEVELOPMENT STUDIO</div><div>WEB CONCEPT V2 · 2026<br />ai-core.si（預定品牌網址）</div><div>© AI CORE · MADE WITH INTENT.</div></footer></div></section>;
 }
 
 export default function Home() {
@@ -196,9 +284,7 @@ export default function Home() {
   const [scene, setScene] = useState(0);
   const [progress, setProgress] = useState(0);
   const [modalProject, setModalProject] = useState<{ key: ProjectKey; trigger: HTMLButtonElement } | null>(null);
-  const [toast, setToast] = useState("");
   const storyRef = useRef<HTMLElement>(null);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const revealObserver = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) { entry.target.classList.add("in"); revealObserver.unobserve(entry.target); } }), { threshold: 0.13 });
@@ -220,30 +306,12 @@ export default function Home() {
 
   const closeProject = useCallback(() => setModalProject(null), []);
 
-  const showToast = (message: string) => { setToast(message); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(""), 3100); };
-  const handleForm = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); const data = new FormData(event.currentTarget); const name = String(data.get("name") || "").trim(); const type = String(data.get("type") || ""); const detail = String(data.get("detail") || "").trim();
-    if (!name || !detail) { showToast("請先填寫稱呼與需求內容"); return; }
-    const text = `AI CORE 艾構｜初步需求摘要\n稱呼：${name}\n需求類型：${type}\n需求說明：\n${detail}`;
-    try { await navigator.clipboard.writeText(text); showToast("需求摘要已複製，可貼到訊息中！"); }
-    catch {
-      const temporary = document.createElement("textarea");
-      temporary.value = text;
-      document.body.appendChild(temporary);
-      temporary.select();
-      const copied = document.execCommand("copy");
-      temporary.remove();
-      showToast(copied ? "需求摘要已複製！" : "瀏覽器限制複製，請手動選取文字");
-    }
-  };
-
   return <main id="top">
     <Header menuOpen={menuOpen} onMenuToggle={() => setMenuOpen((open) => !open)} onCloseMenu={() => setMenuOpen(false)} />
     <section className="hero" aria-labelledby="heroTitle"><div className="container hero-main"><div className="hero-copy"><div className="hero-kicker eyebrow"><span className="line" /><span>DESIGN &amp; DEVELOPMENT STUDIO</span></div><h1 id="heroTitle"><span className="hero-title-line">好的網站，</span><span className="hero-title-line indent">不只好看<span className="hero-dot">。</span></span></h1><p className="lead">從品牌形象網站、UI／UX 到客製化數位工具。<br />艾構結合設計思考與開發實作，讓想法不只被看見，更能真正運作。</p><div className="hero-buttons"><a className="btn-dark" href="#story">探索艾構的方式 <span aria-hidden="true">↗</span></a><a className="btn-text" href="#services">我們提供哪些服務 <span aria-hidden="true">↘</span></a></div></div><HeroLogo /></div><div className="container hero-baseline mono"><span>01 / AI CORE — INDEPENDENT DIGITAL STUDIO</span><span className="scroll-prompt">SCROLL TO EXPLORE <span className="down-arrow" aria-hidden="true">↓</span></span></div></section>
     <aside className="manifesto"><div className="container manifesto-inner"><div className="manifesto-title">有設計的感受，也有實作的底氣。<br />讓每個細節，都回到使用者與品牌本身。</div><div className="manifesto-side mono">DESIGN THINKING <span aria-hidden="true">×</span> DEVELOPMENT<br />FOR BRANDS WHO WANT TO MOVE FORWARD.</div></div></aside>
     <Story scene={scene} progress={progress} storyRef={storyRef} />
-    <Services /><Works onProject={(project, trigger) => { setModalProject({ key: project, trigger }); }} /><Process /><Contact onSubmit={handleForm} />
+    <Services /><Works onProject={(project, trigger) => { setModalProject({ key: project, trigger }); }} /><Process /><Contact />
     {modalProject && <ProjectModal project={projectContent[modalProject.key]} trigger={modalProject.trigger} onClosed={closeProject} />}
-    <div className={`toast${toast ? " show" : ""}`} role="status" aria-live="polite">{toast}</div>
   </main>;
 }

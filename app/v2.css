@@ -47,3 +47,24 @@ html{scroll-behavior:smooth;scroll-padding-top:88px}body{background:var(--paper)
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}.reveal{opacity:1;transform:none}}
 
 @media(prefers-reduced-motion:reduce){.modal-shell,.modal-backdrop.closing .modal-shell{transform:none;animation:none}.modal-link:hover span{transform:none}}
+
+/* Patch 07A: section headings follow the approved portfolio typography. */
+#services .section-header h2,.process-title,.why-quote,.contact h2{
+  font-family:inherit;
+  font-size:clamp(42px,4.45vw,66px);
+  font-weight:550;
+  line-height:1.16;
+  letter-spacing:-.025em;
+}
+@media(max-width:560px){
+  #services .section-header h2,.process-title,.why-quote,.contact h2{
+    font-size:clamp(36px,9.75vw,42px);
+    line-height:1.17;
+  }
+}
+.contact-grid>*,.contact-form .field{min-width:0}
+.contact-form input,.contact-form select,.contact-form textarea{min-width:0;max-width:100%}
+.contact-form .field-error{color:var(--accent-pale);font-size:12px;line-height:1.75;margin:8px 0 0;overflow-wrap:anywhere}
+.contact-form [aria-invalid="true"]{border-color:var(--accent)}
+.contact-form .form-send:disabled{cursor:not-allowed}
+.contact-form .form-send:disabled:hover{background:var(--accent)}
