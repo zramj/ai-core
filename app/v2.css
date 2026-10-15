@@ -74,7 +74,8 @@ html{scroll-behavior:smooth;scroll-padding-top:88px}body{background:var(--paper)
 .contact-email,.contact-line{display:inline-flex;align-items:center;gap:10px;max-width:100%;text-decoration:none}
 .contact-email svg{width:22px;height:22px;flex-shrink:0}
 .contact-email span{min-width:0;overflow-wrap:anywhere}
-.contact-line{letter-spacing:normal}
+.contact-line{letter-spacing:normal;white-space:nowrap}
+.contact-line svg{width:20px;height:20px;flex-shrink:0;margin-right:2px}
 .contact-line-brand{color:#98AD98}
 .contact-socials{display:flex;align-items:center;gap:22px}
 .contact-social,.contact-social svg{display:block;width:24px;height:24px}
