@@ -74,15 +74,20 @@ html{scroll-behavior:smooth;scroll-padding-top:88px}body{background:var(--paper)
 .contact-email,.contact-line{display:inline-flex;align-items:center;gap:10px;max-width:100%;text-decoration:none}
 .contact-email svg{width:22px;height:22px;flex-shrink:0}
 .contact-email span{min-width:0;overflow-wrap:anywhere}
-.contact-line{letter-spacing:normal;white-space:nowrap}
-/* Official LINE asset: https://www.line.me/en/logo — clear space is half the icon size. */
-.contact-line-logo{box-sizing:content-box;display:block;width:auto;height:20px;padding:10px;flex-shrink:0}
-@media(max-width:850px){.contact-line-logo{height:40px;padding:20px}}
+.contact-line{letter-spacing:normal;white-space:nowrap;gap:12px;min-height:40px}
+.contact-line-logo{display:block;width:32px;height:auto;flex-shrink:0;color:#97A88C;transition:color .2s ease}
+.contact-line-arrow{display:inline-block;transition:transform .2s ease}
+@media(max-width:850px){.contact-line{min-height:80px}}
 .contact-socials{display:flex;align-items:center;gap:22px}
 .contact-social,.contact-social svg{display:block;width:24px;height:24px}
 .contact-details :is(.contact-email,.contact-line,.contact-social){transition:opacity .2s ease}
 .contact-details :is(.contact-email,.contact-line,.contact-social):hover{opacity:.85}
 .contact-details [aria-disabled="true"]{cursor:default}
+.contact-details .contact-line{transition:color .2s ease}
+.contact-details .contact-line:hover{opacity:1;color:var(--accent-pale)}
+.contact-line:hover .contact-line-logo{color:#ACBCA1}
+.contact-line:hover .contact-line-arrow{transform:translateX(2px)}
+@media(prefers-reduced-motion:reduce){.contact-line:hover .contact-line-arrow{transform:none}}
 
 /* CONTACT layout and browser autofill stay scoped to this form. */
 .contact-form :is(.form-title,.field-wide,.form-send,.form-notice){grid-column:1 / -1}
