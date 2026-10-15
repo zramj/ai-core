@@ -61,13 +61,13 @@ function Header({ menuOpen, onMenuToggle, onCloseMenu }: { menuOpen: boolean; on
     <header className="site-header" id="header">
       <div className="container header-inner">
         <a href="#top" className="brand" aria-label="AI CORE 艾構，回到首頁"><span className="brand-emblem" aria-hidden="true" /><span className="brand-main">AI CORE</span><span className="brand-chinese">艾構</span></a>
-        <nav className="nav-links" aria-label="主導覽"><a href="#story">理念</a><a href="#services">服務項目</a><a href="#works">風格示意</a><a href="#approach">合作流程</a></nav>
+        <nav className="nav-links" aria-label="主導覽"><a href="#story">理念</a><a href="#services">服務項目</a><a href="#works">作品展示</a><a href="#approach">合作流程</a></nav>
         <a className="nav-cta" href="#contact"><span>聊聊你的專案</span><span aria-hidden="true">↗</span></a>
         <button className={`hamburger${menuOpen ? " open" : ""}`} onClick={onMenuToggle} aria-label={menuOpen ? "關閉選單" : "展開選單"} aria-expanded={menuOpen}><span /><span /></button>
       </div>
     </header>
     <nav className={`mobile-nav${menuOpen ? " open" : ""}`} aria-label="手機版導覽">
-      <a onClick={onCloseMenu} href="#story">我們的理念</a><a onClick={onCloseMenu} href="#services">服務項目</a><a onClick={onCloseMenu} href="#works">風格示意</a><a onClick={onCloseMenu} href="#approach">合作流程</a><a onClick={onCloseMenu} href="#contact">開始合作 ↗</a>
+      <a onClick={onCloseMenu} href="#story">我們的理念</a><a onClick={onCloseMenu} href="#services">服務項目</a><a onClick={onCloseMenu} href="#works">作品展示</a><a onClick={onCloseMenu} href="#approach">合作流程</a><a onClick={onCloseMenu} href="#contact">開始合作 ↗</a>
     </nav>
   </>;
 }
@@ -368,7 +368,18 @@ function Contact({ submitRequest, submissionEnabled = false }: { submitRequest?:
         {displayStatus === "error" ? <button type="button" className="contact-result-return" onClick={returnToForm}>保留資料，返回表單</button> : previewStatus !== null && <button type="button" className="contact-result-return" onClick={returnToForm}>結束預覽，返回表單</button>}
       </div>}
     </form>
-  </div><footer className="footer"><div><strong>AI CORE / 艾構</strong><br /><br />DESIGN &amp; DEVELOPMENT STUDIO</div><div>WEB CONCEPT V2 · 2026<br />ai-core.si（預定品牌網址）</div><div>© AI CORE · MADE WITH INTENT.</div></footer></div></section>;
+  </div><footer className="footer">
+    <div className="footer-brand"><strong>AI CORE / 艾構</strong><br /><br />DESIGN &amp; DEVELOPMENT STUDIO</div>
+    <nav className="footer-explore" aria-label="頁尾導覽">
+      <span className="footer-label mono">EXPLORE</span>
+      <div className="footer-links"><a href="#story">理念</a><a href="#services">服務項目</a><a href="#works">作品展示</a><a href="#approach">合作流程</a></div>
+    </nav>
+    <div className="footer-legal">
+      <span>© {new Date().getFullYear()} AI CORE</span>
+      {/* Replace with a /privacy link once the formal policy page is published. */}
+      <span>隱私權政策</span>
+    </div>
+  </footer></div></section>;
 }
 
 export default function Home() {
