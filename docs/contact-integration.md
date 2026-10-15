@@ -4,6 +4,8 @@ Patch 07A.3。前端依據：`app/page.tsx` 的 `Contact`、`ContactRequest`、`
 
 目前完成表單驗證及 Idle／Loading／Success／Error UI，**尚未建立 `/api/contact`、API 呼叫或寄信功能**。首頁仍使用 `<Contact />`，未傳入 API adapter，也未開啟 `submissionEnabled`，因此一般表單按鈕維持 Disabled。
 
+官方對外聯絡 Email 為 `service@ai-core.si`，CONTACT 顯示文字與 `mailto:` 使用此地址。未來表單通知亦預定由此信箱收件；這不是已完成的寄信設定，實際收發能力仍待後端／伺服器確認。`ContactRequest.email` 與 Request 範例中的 Email 仍代表訪客輸入，不可固定為官方信箱。
+
 ## A. 現有表單資料
 
 沿用現有 `ContactRequest`，不要另外建立不同欄位名稱的 DTO：
@@ -122,7 +124,7 @@ type SubmitContactRequest =
 
 - 實作並確認 `/api/contact` 的 API Contract 與收件成功定義。
 - Server-side Validation：檢查 JSON、所有欄位型別、必填、長度、Email／電話格式與服務選項白名單。
-- 接入 Email 收件服務，設定實際收件信箱、已驗證寄件網域與 Reply-To；避免使用訪客輸入直接拼接郵件 header 或未跳脫的 HTML。
+- 接入 Email 收件服務，預定通知收件信箱為 `service@ai-core.si`，待確認後由後端設定；另需確認已驗證寄件網域與 Reply-To，避免使用訪客輸入直接拼接郵件 header 或未跳脫的 HTML。
 - 垃圾訊息防護、Rate Limiting 與必要的重複提交處理。
 - 錯誤處理：寄送／收件失敗不得回報 `received: true`；保留可追蹤且避免洩漏個資的伺服器紀錄。
 - 正式安全設定：HTTPS、請求大小限制、來源／CORS 政策及服務商權限，依部署環境確認。

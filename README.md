@@ -2,6 +2,12 @@
 
 AI CORE Studio Website 的本機開發專案。
 
+## 官方聯絡資訊
+
+- 官方對外聯絡 Email：`service@ai-core.si`，網站連結使用 `mailto:service@ai-core.si`。
+- CONTACT 表單的 `email` 是訪客填寫的聯絡地址，不可替換為官方信箱。
+- 未來表單通知預定收件地址為 `service@ai-core.si`；後端寄信尚未實作，信箱收發與正式環境設定尚未驗證。串接狀態及交接責任見 [CONTACT 前後端串接規格](docs/contact-integration.md)。
+
 ## 技術
 
 - Next.js 16（App Router）
